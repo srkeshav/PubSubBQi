@@ -1,0 +1,9 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/src/TH.PubSub/TH.PubSub.UI.Con/obj
+/src/TH.PubSub/TH.PubSub.Lib/obj
+/src/TH.PubSub/.vs/TH.PubSub/v16
+/src/.vs
+/.vs
