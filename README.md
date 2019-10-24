@@ -48,4 +48,6 @@ System allows publishers to send message of different types to the queue
 
 Extensible
 Publisher can depend on a QueueProvider which can have any implementation underneath
-Publisher can have a list of Queues
+Publisher can have a list of Queues which can contain different data based on Content or Topic
+So, while adding data to a queue we can add data to a queue containing specific data type
+While removing data from a queue, we can have an implemenation which removes data of a particular type
