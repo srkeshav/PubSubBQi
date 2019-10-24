@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using TH.PubSub.Lib.Interfaces;
 
 namespace TH.PubSub.Lib.Impl
@@ -10,24 +9,42 @@ namespace TH.PubSub.Lib.Impl
         public event EventHandler ReadyToPublish;
         private readonly string _name;
         private readonly int _size;
-        private readonly Queue<object> queue;
-        public  Publisher(string name, int size)
+        public Queue<object> queue;
+        public bool WaitingToFlush { get; set; }
+
+        public Publisher(string name, int size)
         {
             _name = name;
             _size = size;
             queue = new Queue<object>(_size);
         }
 
-        public Task<bool> AddToQueue(object obj)
+        public void AddToQueue(object obj)
         {
-            //Add Elements to Queue
-            return Task.FromResult(true);
+            if (_size == queue.Count)
+            {
+                ReadyToPublish(this, EventArgs.Empty);
+            }
+            if(WaitingToFlush)
+            {
+                queue.Dequeue();
+            }
+            queue.Enqueue(obj);
         }
 
-        public Task<bool> ClearQueue()
+        public void ClearQueue()
         {
             queue.Clear();
-            return Task.FromResult(true);
+        }
+
+        public List<object> FlushQueuedItems()
+        {
+            var list = new List<object>();
+            while (queue.Count > 0)
+            {
+                list.Add(queue.Dequeue());
+            }
+            return list;
         }
     }
 }

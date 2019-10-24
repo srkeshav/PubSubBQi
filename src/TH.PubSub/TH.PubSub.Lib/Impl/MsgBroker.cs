@@ -1,56 +1,92 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 using TH.PubSub.Lib.Interfaces;
 
 namespace TH.PubSub.Lib.Impl
 {
+    //TODO: Allow only a single object to be created of the MessageBroker
     public class MsgBroker : IMsgBroker
     {
-        private Dictionary<IPublisher, List<Action<object>>> actionSet = new Dictionary<IPublisher, List<Action<object>>>();
+        //Xtensibility: If we want it to be used conccurrently, we will have to use ConccurrentDictionary
+        private Dictionary<IPublisher, List<Action<List<object>>>> actionSet = 
+            new Dictionary<IPublisher, List<Action<List<object>>>>();
 
-        public Task<IPublisher> CreatePublisher(string name, int size)
+        public IPublisher CreatePublisher(string name, int size)
         {
-            //TODO: Xtensibility: We can maintain a list of publishers and ensure
-            //two publishers don't have same property values
+            //Xtensibility: We can maintain a list of publishers and ensure two publishers don't have same name
             IPublisher pub =  new Publisher(name, size);
             pub.ReadyToPublish += Pub_ReadyToPublish;
-            return Task.FromResult(pub);
+            return pub;
         }
 
         private void Pub_ReadyToPublish(object sender, EventArgs e)
         {
-            //TODO: Convert the sender to publisher
-            //TODO: Fire the queue elements to the subscribers of the publisher
+            var publisher = sender as Publisher;
+            if (actionSet.ContainsKey(publisher) && actionSet[publisher].Count > 0)
+            {
+                foreach (var action in actionSet[publisher])
+                {
+                    var items = publisher.FlushQueuedItems();
+                    action(items);
+                }
+            }
+            else
+            {
+                publisher.WaitingToFlush = true;
+            }
         }
 
-        public Task<bool> DeletePublisher(string name)
+        public void DeletePublisher(ref IPublisher publisher)
         {
-            //TODO: Delete a publisher
-            //TODO: If it is already present in the dictionary, remove all the items
-            //TODO: remove it from dictionary and then dispose that object
-            return Task.FromResult(true);
+            //We need to pass the publisher object as we are not maintaining a list of publishers in MessageBroker
+            if(actionSet.ContainsKey(publisher))
+            {
+                //TODO: Remove the publisher before disposing it otherwise dictionary will throw exception
+                actionSet.Remove(publisher);
+            }
+            publisher = null;
         }
 
-        public Task<bool> Subscribe(IPublisher publisher, Action<object> calledAction)
+        public void Subscribe(IPublisher publisher, Action<List<object>> calledAction)
         {
-            //TODO: If publisher is disposed, it will be null, check if publisher is null
-            //Subscribe to a publisher
-            return Task.FromResult(true);
+            if (publisher == null)
+                throw new ArgumentNullException();
+
+            if (actionSet.ContainsKey(publisher))
+            {
+                publisher.AddToQueue(calledAction);
+            }
+            else
+            {
+                actionSet.Add(publisher, new List<Action<List<object>>> { calledAction });
+                if (publisher.WaitingToFlush)
+                {
+                    var items = publisher.FlushQueuedItems();
+                    calledAction(items);
+                    publisher.WaitingToFlush = false;
+                }
+            }
         }
 
-        public Task<bool> UnSubscribe(IPublisher publisher, Action<object> calledAction)
+        public void UnSubscribe(IPublisher publisher, Action<List<object>> calledAction)
         {
-            
-            //TODO: Unsubscribe from a publisher
-            return Task.FromResult(true);
+            if (publisher == null)
+                throw new ArgumentNullException();
+
+            if (actionSet.ContainsKey(publisher))
+            {
+                var index = actionSet[publisher].FindIndex(x => x == calledAction);
+                if (index != -1)
+                    actionSet[publisher].RemoveAt(index);
+            }
         }
 
-        public Task<bool> AddToPublisherQueue(IPublisher publisher, object o)
+        public void AddToPublisherQueue(IPublisher publisher, object o)
         {
+            if (publisher == null)
+                throw new ArgumentNullException();
             publisher.AddToQueue(o);
-            return Task.FromResult(true);
         }
     }
 }

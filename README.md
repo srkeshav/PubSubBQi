@@ -1,6 +1,18 @@
 # PubSubBQi
 
+Flow:
+1. Create a publisher
+2. Subscribe to publisher
+2. Add message to publishers queue
+3. Overflow the queue
+4. Delete the publisher
+5. Try adding message to the queue of the same publisher
+6. Create new publisher
+7. Add messages to publisher queue
+8. Overflow the queue
+9. Subscribe to the publisher
 
+See, if it's possible to give the application a UI
 
 
 
@@ -25,6 +37,7 @@ Publisher, should all the elements of the Queue for that Publisher be fired off 
 
 
 Done:
+Create Implementation of MessageBroker and Publisher
 Read up on Publisher Subscriber/ Create Interface for contract
 Add Projects
 
@@ -47,6 +60,10 @@ System allows publishers to send message of different types to the queue
 
 
 Extensible
+We can have asynchronous implemenations in real-world scenarios
+We can return bool/string while execution subscription or any other action to denote the progress of the method
+We can create named or typed implementations of the Publisher class
+Concurrent Dictionary can be used to make the implemenation thread-safe
 Publisher can depend on a QueueProvider which can have any implementation underneath
 Publisher can have a list of Queues which can contain different data based on Content or Topic
 So, while adding data to a queue we can add data to a queue containing specific data type
