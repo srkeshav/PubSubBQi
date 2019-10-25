@@ -1,5 +1,5 @@
 # PubSubBQi
-How to Run:
+__How to Run:__
 1. Install [Visual Studio Community 2019](https://visualstudio.microsoft.com/thank-you-downloading-visual-studio/?sku=Community&rel=16) from VisualStudio website
 2. Download .NET desktop development workload
 3. Open Visual Studio, select Clone or check out code 
@@ -7,27 +7,28 @@ How to Run:
 5. Open the solution file from src > TH.PubSub
 6. Run the TH.PubSub.UI.Con application and test
 
-//Create new publisher
+__Create new publisher__
 >var publisher = new Publisher();
-//Create new subscriber
+__Create new subscriber__
 >var subscriber = new Subscriber();
 
-//Publish an object to a queue
+__Publish an object to a queue__
 >publisher.Publish(object, queuename);
 
-//Subscribe to a queue
+__Subscribe to a queue__
 >subscriber.Subscribe(queuename);
-//UnSubscribe from a queue
+__UnSubscribe from a queue__
 >subscriber.UnSubscribe(queuename);
 
 
-Assumptions
+__Assumptions:__
 * We need to address different queues by names (they are stored in MessageBroker QueuePool)
-* MessageBroker will be singleton (implemented manually, instead of using DI Framework)
+* QueuePool will have a default queue named "default"
 * Default buffer limit for default queue is 5
+* MessageBroker will be singleton (implemented manually, instead of using DI Framework)
 * Subscribers cannot subscribe to same queue twice
 
-Xtensibility:
+__Xtensibility:__
 * Write unit test cases
 * Use ConcurrentDictionary for handling concurrency in multithreading scenarios
 * Use async await for asynchronous handling of data while publishing and flushing notifications
