@@ -18,10 +18,11 @@ How to Run:
 Xtensibility:
 Write unit test cases
 Use ConcurrentDictionary for handling concurrency in multithreading scenarios
+Use async await for asynchronous handling of data while publishing and flushing notifications
 Use DependencyInjection to be able inject dependencies based on definition
 Use Typed Queues instead of named queues for better type-safety
 Instead of passing multiple parameters while PublishingToQueue, we can use a single dto object for 
 improved encapsulation and maintenance
 Allow users to delete queues except Default Queue
-Refactor for better naming
+Refactor for better naming and easier testing
 
