@@ -1,6 +1,6 @@
 # PubSubBQi
 How to Run:
-1. Install [Visual Studio Community 2019][https://visualstudio.microsoft.com/thank-you-downloading-visual-studio/?sku=Community&rel=16] from VisualStudio website
+1. Install [Visual Studio Community 2019](https://visualstudio.microsoft.com/thank-you-downloading-visual-studio/?sku=Community&rel=16) from VisualStudio website
 2. Download .NET desktop development workload
 3. Open Visual Studio, select Clone or check out code 
 4. Clone the Project from Github to a local repository
