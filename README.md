@@ -9,6 +9,7 @@ __How to Run:__
 
 __Create new publisher__
 >var publisher = new Publisher();
+
 __Create new subscriber__
 >var subscriber = new Subscriber();
 
@@ -17,6 +18,7 @@ __Publish an object to a queue__
 
 __Subscribe to a queue__
 >subscriber.Subscribe(queuename);
+
 __UnSubscribe from a queue__
 >subscriber.UnSubscribe(queuename);
 
