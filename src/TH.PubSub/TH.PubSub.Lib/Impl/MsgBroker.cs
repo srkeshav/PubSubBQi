@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using TH.PubSub.Lib.Interfaces;
 
 namespace TH.PubSub.Lib.Impl
@@ -8,85 +7,105 @@ namespace TH.PubSub.Lib.Impl
     //TODO: Allow only a single object to be created of the MessageBroker
     public class MsgBroker : IMsgBroker
     {
-        //Xtensibility: If we want it to be used conccurrently, we will have to use ConccurrentDictionary
-        private Dictionary<IPublisher, List<Action<List<object>>>> actionSet = 
-            new Dictionary<IPublisher, List<Action<List<object>>>>();
+        private Dictionary<string, List<Action<List<object>>>> actionDictionary;
+        private Dictionary<string, BufferedQueue> queueDictionary;
 
-        public IPublisher CreatePublisher(string name, int size)
+        #region Singleton Initializer
+
+        private static readonly Lazy<MsgBroker> lazy = new Lazy<MsgBroker>(() => new MsgBroker());
+        public static MsgBroker Instance { get { return lazy.Value; } }
+
+        #endregion
+
+        #region Constructor
+
+        private MsgBroker()
         {
-            //Xtensibility: We can maintain a list of publishers and ensure two publishers don't have same name
-            IPublisher pub =  new Publisher(name, size);
-            pub.ReadyToPublish += Pub_ReadyToPublish;
-            return pub;
+            actionDictionary =
+            new Dictionary<string, List<Action<List<object>>>>()
+            {
+                {"default", new List<Action<List<object>>>() }
+            };
+
+            var defaultQueue = new BufferedQueue("default", 5);
+            defaultQueue.ReadyToPublish += QueuedItems_ReadyToPublish;
+            queueDictionary = new Dictionary<string, BufferedQueue>()
+            {
+                {"default", new BufferedQueue("default", 5) }
+            };
         }
 
-        private void Pub_ReadyToPublish(object sender, EventArgs e)
+        #endregion
+
+        private void QueuedItems_ReadyToPublish(object sender, EventArgs e)
         {
-            var publisher = sender as Publisher;
-            if (actionSet.ContainsKey(publisher) && actionSet[publisher].Count > 0)
+            var queue = sender as BufferedQueue;
+            var qname = queue.Name;
+            if (actionDictionary.ContainsKey(qname) && actionDictionary[qname].Count > 0)
             {
-                foreach (var action in actionSet[publisher])
+                foreach (var action in actionDictionary[qname])
                 {
-                    var items = publisher.FlushQueuedItems();
+                    var items = queue.FlushQueuedItems();
                     action(items);
                 }
             }
             else
             {
-                publisher.WaitingToFlush = true;
+                queue.WaitingToFlush = true;
             }
         }
 
-        public void DeletePublisher(ref IPublisher publisher)
+        public void Subscribe(Action<List<object>> calledAction, string queueName = "default")
         {
-            //We need to pass the publisher object as we are not maintaining a list of publishers in MessageBroker
-            if(actionSet.ContainsKey(publisher))
+            //If a queue being subscribed to does not exist, create it
+            if (!queueDictionary.ContainsKey(queueName))
+                InitializeQueue(queueName, 3);
+
+            actionDictionary[queueName].Add(calledAction);
+
+            //If Subscription Count was zero earlier and queued overflowed, we must check if queue
+            //must publish items to the new subscriber
+            var queue = queueDictionary[queueName];
+            if (queue.WaitingToFlush)
             {
-                //TODO: Remove the publisher before disposing it otherwise dictionary will throw exception
-                actionSet.Remove(publisher);
+                var items = queue.FlushQueuedItems();
+                calledAction(items);
+                queue.WaitingToFlush = false;
             }
-            publisher = null;
         }
 
-        public void Subscribe(IPublisher publisher, Action<List<object>> calledAction)
+        public void UnSubscribe(Action<List<object>> calledAction, string queueName = "default")
         {
-            if (publisher == null)
-                throw new ArgumentNullException();
-
-            if (actionSet.ContainsKey(publisher))
+            if (actionDictionary.ContainsKey(queueName))
             {
-                publisher.AddToQueue(calledAction);
+                var index = actionDictionary[queueName].FindIndex(x => x == calledAction);
+                if (index != -1)
+                    actionDictionary[queueName].RemoveAt(index);
+            }
+        }
+
+        public void PublishToQueue(object o, string name = "default")
+        {
+            BufferedQueue queueToAddIn;
+            if (queueDictionary.ContainsKey(name))
+            {
+                queueToAddIn = queueDictionary[name];
             }
             else
             {
-                actionSet.Add(publisher, new List<Action<List<object>>> { calledAction });
-                if (publisher.WaitingToFlush)
-                {
-                    var items = publisher.FlushQueuedItems();
-                    calledAction(items);
-                    publisher.WaitingToFlush = false;
-                }
+                queueToAddIn = InitializeQueue(name, 3);
             }
+
+            queueToAddIn.AddToQueue(o);
         }
 
-        public void UnSubscribe(IPublisher publisher, Action<List<object>> calledAction)
+        private BufferedQueue InitializeQueue(string name, int capacity)
         {
-            if (publisher == null)
-                throw new ArgumentNullException();
-
-            if (actionSet.ContainsKey(publisher))
-            {
-                var index = actionSet[publisher].FindIndex(x => x == calledAction);
-                if (index != -1)
-                    actionSet[publisher].RemoveAt(index);
-            }
-        }
-
-        public void AddToPublisherQueue(IPublisher publisher, object o)
-        {
-            if (publisher == null)
-                throw new ArgumentNullException();
-            publisher.AddToQueue(o);
+            var newQueue = new BufferedQueue(name, 3);
+            newQueue.ReadyToPublish += QueuedItems_ReadyToPublish;
+            queueDictionary.Add(name, newQueue);
+            actionDictionary.Add(name, new List<Action<List<object>>>());
+            return newQueue;
         }
     }
 }
