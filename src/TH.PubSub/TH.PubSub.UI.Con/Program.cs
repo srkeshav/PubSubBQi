@@ -8,14 +8,19 @@ namespace TH.PubSub.UI.Con
     {
         static void Main(string[] args)
         {
+            Console.WriteLine("Buffer limit for default queue is 5 and new queues is 3 \n");
+
             Program prg = new Program();
             prg.RunQueueingSystem();
         }
 
         private  void RunQueueingSystem()
         {
+            //Create new publisher
             var publisher = new Publisher();
+            //Create new subscriber
             var subscriber = new Subscriber();
+
             AddItemsToQueueAfterSubscribing(publisher, subscriber, "test");
             AddItemsToQueueBeforeSubscribing(publisher, subscriber, "test");
 
@@ -27,7 +32,7 @@ namespace TH.PubSub.UI.Con
         private void AddItemsToQueueAfterSubscribing(IPublisher publisher, ISubscriber subscriber,
             string queueName)
         {
-            Console.WriteLine(nameof(AddItemsToQueueAfterSubscribing));
+            Console.WriteLine(nameof(AddItemsToQueueAfterSubscribing)+ "\n");
             subscriber.Subscribe(queueName);
             
             for(int i = 0; i < 10; i++)
@@ -43,7 +48,7 @@ namespace TH.PubSub.UI.Con
         private void AddItemsToQueueBeforeSubscribing(IPublisher publisher, ISubscriber subscriber,
             string queueName)
         {
-            Console.WriteLine(nameof(AddItemsToQueueBeforeSubscribing));
+            Console.WriteLine(nameof(AddItemsToQueueBeforeSubscribing) + "\n");
 
             for (int i = 0; i < 10; i++)
             {

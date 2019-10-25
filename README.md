@@ -7,6 +7,20 @@ How to Run:
 5. Open the solution file from src > TH.PubSub
 6. Run the TH.PubSub.UI.Con application and test
 
+//Create new publisher
+>var publisher = new Publisher();
+//Create new subscriber
+>var subscriber = new Subscriber();
+
+//Publish an object to a queue
+>publisher.Publish(object, queuename);
+
+//Subscribe to a queue
+>subscriber.Subscribe(queuename);
+//UnSubscribe from a queue
+>subscriber.UnSubscribe(queuename);
+
+
 Assumptions
 * We need to address different queues by names (they are stored in MessageBroker QueuePool)
 * MessageBroker will be singleton (implemented manually, instead of using DI Framework)
