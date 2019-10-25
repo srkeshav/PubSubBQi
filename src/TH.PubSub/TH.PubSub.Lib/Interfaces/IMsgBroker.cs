@@ -9,6 +9,6 @@ namespace TH.PubSub.Lib.Interfaces
         void Subscribe(Action<List<object>> calledAction, string queueName =  "default");
         ///UnSubscribe from the queue so that notifications sent by a queue are not received
         void UnSubscribe(Action<List<object>> calledAction, string queueName ="default");
-        void PublishToQueue(object o, string name = "default");
+        void PublishToQueue(object o, string queueName = "default");
     }
 }

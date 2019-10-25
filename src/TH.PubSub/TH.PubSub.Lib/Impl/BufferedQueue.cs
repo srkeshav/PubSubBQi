@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using TH.PubSub.Lib.Interfaces;
 
 namespace TH.PubSub.Lib.Impl
@@ -8,16 +7,16 @@ namespace TH.PubSub.Lib.Impl
     class BufferedQueue : IItemQueue
     {
         public string Name { get; set; }
-        public int Capacity { get; set; }
+        public int BufferLimit { get; set; }
         public bool WaitingToFlush { get; set; }
         public event EventHandler ReadyToPublish;
         Queue<object> queue;
 
-        public BufferedQueue(string name, int capacity)
+        public BufferedQueue(string name, int limit)
         {
             Name = name;
-            Capacity = capacity;
-            queue = new Queue<object>(capacity);
+            BufferLimit = limit;
+            queue = new Queue<object>();
         }
 
         public List<object> FlushQueuedItems()
@@ -30,17 +29,11 @@ namespace TH.PubSub.Lib.Impl
             return list;
         }
 
-        public void AddToQueue(object obj)
+        public void EnQueue(object obj)
         {
-            if (Capacity == queue.Count)
+            if (BufferLimit <= queue.Count && !WaitingToFlush)
             {
                 ReadyToPublish(this, EventArgs.Empty);
-            }
-
-            if (WaitingToFlush)
-            {
-                //There is no subscriber and queue is full, so remove old items and enqueue new ones
-                queue.Dequeue();
             }
 
             queue.Enqueue(obj);

@@ -4,7 +4,6 @@ using TH.PubSub.Lib.Interfaces;
 
 namespace TH.PubSub.Lib.Impl
 {
-    //TODO: Allow only a single object to be created of the MessageBroker
     public class MsgBroker : IMsgBroker
     {
         private Dictionary<string, List<Action<List<object>>>> actionDictionary;
@@ -41,7 +40,7 @@ namespace TH.PubSub.Lib.Impl
         {
             var queue = sender as BufferedQueue;
             var qname = queue.Name;
-            if (actionDictionary.ContainsKey(qname) && actionDictionary[qname].Count > 0)
+            if (actionDictionary[qname].Count > 0)
             {
                 foreach (var action in actionDictionary[qname])
                 {
@@ -60,6 +59,13 @@ namespace TH.PubSub.Lib.Impl
             //If a queue being subscribed to does not exist, create it
             if (!queueDictionary.ContainsKey(queueName))
                 InitializeQueue(queueName, 3);
+
+            var existingSubscriptionIndex = actionDictionary[queueName].FindIndex(x => x == calledAction);
+            if (existingSubscriptionIndex != -1)
+            {
+              //Item already exists, do not subscribe twice  
+                return;
+            }
 
             actionDictionary[queueName].Add(calledAction);
 
@@ -84,27 +90,26 @@ namespace TH.PubSub.Lib.Impl
             }
         }
 
-        public void PublishToQueue(object o, string name = "default")
+        public void PublishToQueue(object o, string queueName = "default")
         {
             BufferedQueue queueToAddIn;
-            if (queueDictionary.ContainsKey(name))
+            if (queueDictionary.ContainsKey(queueName))
             {
-                queueToAddIn = queueDictionary[name];
+                queueToAddIn = queueDictionary[queueName];
             }
             else
             {
-                queueToAddIn = InitializeQueue(name, 3);
+                queueToAddIn = InitializeQueue(queueName, 3);
             }
-
-            queueToAddIn.AddToQueue(o);
+            queueToAddIn.EnQueue(o);
         }
 
-        private BufferedQueue InitializeQueue(string name, int capacity)
+        private BufferedQueue InitializeQueue(string queueName, int capacity)
         {
-            var newQueue = new BufferedQueue(name, 3);
+            var newQueue = new BufferedQueue(queueName, 3);
             newQueue.ReadyToPublish += QueuedItems_ReadyToPublish;
-            queueDictionary.Add(name, newQueue);
-            actionDictionary.Add(name, new List<Action<List<object>>>());
+            queueDictionary.Add(queueName, newQueue);
+            actionDictionary.Add(queueName, new List<Action<List<object>>>());
             return newQueue;
         }
     }

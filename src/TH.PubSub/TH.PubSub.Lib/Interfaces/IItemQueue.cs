@@ -6,16 +6,16 @@ namespace TH.PubSub.Lib.Interfaces
     interface IItemQueue
     {
         string Name { get; set; }
-        int Capacity { get; set; }
+        int BufferLimit { get; set; }
 
         /// <summary>
-        /// If the queue is full and has no subscriber, this flag is set so that
+        /// If the bufferlimit is reached and the queue and has no subscriber, this flag is set so that
         /// whenever a new subscriber connects, the queue will flush.
         /// </summary>
         bool WaitingToFlush { get; set; }
 
         /// <summary>
-        /// Fires when the queue is Ready To Publish, the logic can be encapsulated inside Queue class
+        /// Fires when the queue reaches buffer limit and is Ready To Publish
         /// </summary>
         event EventHandler ReadyToPublish;
 
@@ -24,6 +24,9 @@ namespace TH.PubSub.Lib.Interfaces
         /// </summary>
         List<object> FlushQueuedItems();
 
-        void AddToQueue(object obj);
+        /// <summary>
+        /// Enqueue items to the queue
+        /// </summary>
+        void EnQueue(object obj);
     }
 }
