@@ -1,6 +1,6 @@
 ﻿namespace TH.PubSub.Lib.Interfaces
 {
-    interface ISubscriber
+    public interface ISubscriber
     {
         /// <summary>
         /// Subscribe to a queue to receive notifications

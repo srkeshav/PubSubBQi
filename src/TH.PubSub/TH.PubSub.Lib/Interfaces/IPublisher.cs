@@ -2,6 +2,6 @@
 {
     public interface IPublisher
     {
-        void AddToQueue(object obj, string queueName);
+        void Publish(object obj, string queueName);
     }
 }

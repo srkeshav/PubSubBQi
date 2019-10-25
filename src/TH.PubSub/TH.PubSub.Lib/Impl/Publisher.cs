@@ -2,7 +2,7 @@
 
 namespace TH.PubSub.Lib.Impl
 {
-    internal class Publisher : IPublisher
+    public class Publisher : IPublisher
     {
         private readonly IMsgBroker _messageBroker;
         public Publisher()
@@ -10,9 +10,9 @@ namespace TH.PubSub.Lib.Impl
             _messageBroker = MsgBroker.Instance;
         }
 
-        public void AddToQueue(object obj, string queueName)
+        public void Publish(object obj, string queueName)
         {
-            _messageBroker.PublishToQueue(obj, queueName);
+            _messageBroker.PushToQueue(obj, queueName);
         }
     }
 }

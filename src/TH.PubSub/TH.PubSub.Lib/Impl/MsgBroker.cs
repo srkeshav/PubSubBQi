@@ -4,10 +4,10 @@ using TH.PubSub.Lib.Interfaces;
 
 namespace TH.PubSub.Lib.Impl
 {
-    public class MsgBroker : IMsgBroker
+    internal class MsgBroker : IMsgBroker
     {
-        private Dictionary<string, List<Action<List<object>>>> actionDictionary;
-        private Dictionary<string, BufferedQueue> queueDictionary;
+        private readonly Dictionary<string, List<Action<List<object>, string>>> _actionDictionary;
+        private readonly Dictionary<string, BufferedQueue> _queuePool;
 
         #region Singleton Initializer
 
@@ -20,17 +20,18 @@ namespace TH.PubSub.Lib.Impl
 
         private MsgBroker()
         {
-            actionDictionary =
-            new Dictionary<string, List<Action<List<object>>>>()
+            //Initialize Default queues, robustness of queueing s/m is MsgBroker's responsibility
+            _actionDictionary =
+            new Dictionary<string, List<Action<List<object>, string>>>()
             {
-                {"default", new List<Action<List<object>>>() }
+                {"default", new List<Action<List<object>, string>>() }
             };
 
             var defaultQueue = new BufferedQueue("default", 5);
             defaultQueue.ReadyToPublish += QueuedItems_ReadyToPublish;
-            queueDictionary = new Dictionary<string, BufferedQueue>()
+            _queuePool = new Dictionary<string, BufferedQueue>()
             {
-                {"default", new BufferedQueue("default", 5) }
+                {"default", defaultQueue }
             };
         }
 
@@ -40,12 +41,12 @@ namespace TH.PubSub.Lib.Impl
         {
             var queue = sender as BufferedQueue;
             var qname = queue.Name;
-            if (actionDictionary[qname].Count > 0)
+            if (_actionDictionary[qname].Count > 0)
             {
-                foreach (var action in actionDictionary[qname])
+                foreach (var action in _actionDictionary[qname])
                 {
                     var items = queue.FlushQueuedItems();
-                    action(items);
+                    action(items, qname);
                 }
             }
             else
@@ -54,48 +55,48 @@ namespace TH.PubSub.Lib.Impl
             }
         }
 
-        public void Subscribe(Action<List<object>> calledAction, string queueName = "default")
+        public void Subscribe(Action<List<object>, string> calledAction, string queueName = "default")
         {
             //If a queue being subscribed to does not exist, create it
-            if (!queueDictionary.ContainsKey(queueName))
+            if (!_queuePool.ContainsKey(queueName))
                 InitializeQueue(queueName, 3);
 
-            var existingSubscriptionIndex = actionDictionary[queueName].FindIndex(x => x == calledAction);
+            var existingSubscriptionIndex = _actionDictionary[queueName].FindIndex(x => x == calledAction);
             if (existingSubscriptionIndex != -1)
             {
               //Item already exists, do not subscribe twice  
                 return;
             }
 
-            actionDictionary[queueName].Add(calledAction);
+            _actionDictionary[queueName].Add(calledAction);
 
             //If Subscription Count was zero earlier and queued overflowed, we must check if queue
             //must publish items to the new subscriber
-            var queue = queueDictionary[queueName];
+            var queue = _queuePool[queueName];
             if (queue.WaitingToFlush)
             {
                 var items = queue.FlushQueuedItems();
-                calledAction(items);
+                calledAction(items, queue.Name);
                 queue.WaitingToFlush = false;
             }
         }
 
-        public void UnSubscribe(Action<List<object>> calledAction, string queueName = "default")
+        public void UnSubscribe(Action<List<object>, string> calledAction, string queueName = "default")
         {
-            if (actionDictionary.ContainsKey(queueName))
+            if (_actionDictionary.ContainsKey(queueName))
             {
-                var index = actionDictionary[queueName].FindIndex(x => x == calledAction);
+                var index = _actionDictionary[queueName].FindIndex(x => x == calledAction);
                 if (index != -1)
-                    actionDictionary[queueName].RemoveAt(index);
+                    _actionDictionary[queueName].RemoveAt(index);
             }
         }
 
-        public void PublishToQueue(object o, string queueName = "default")
+        public void PushToQueue(object o, string queueName = "default")
         {
             BufferedQueue queueToAddIn;
-            if (queueDictionary.ContainsKey(queueName))
+            if (_queuePool.ContainsKey(queueName))
             {
-                queueToAddIn = queueDictionary[queueName];
+                queueToAddIn = _queuePool[queueName];
             }
             else
             {
@@ -108,8 +109,8 @@ namespace TH.PubSub.Lib.Impl
         {
             var newQueue = new BufferedQueue(queueName, 3);
             newQueue.ReadyToPublish += QueuedItems_ReadyToPublish;
-            queueDictionary.Add(queueName, newQueue);
-            actionDictionary.Add(queueName, new List<Action<List<object>>>());
+            _queuePool.Add(queueName, newQueue);
+            _actionDictionary.Add(queueName, new List<Action<List<object>,string>>());
             return newQueue;
         }
     }

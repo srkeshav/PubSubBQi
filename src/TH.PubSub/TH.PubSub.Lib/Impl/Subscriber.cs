@@ -13,8 +13,10 @@ namespace TH.PubSub.Lib.Impl
         }
 
         //This method is private because we don't want to allow outside access to this method
-        private void Execute(List<object> objs)
+        private void Execute(List<object> objs, string queueName)
         {
+            //Specified queueName so that it becomes easier to test output
+            Console.WriteLine($"Flushed From {queueName }");
             foreach (var obj in objs)
             {
                 Console.Write(obj.ToString() + " ");
